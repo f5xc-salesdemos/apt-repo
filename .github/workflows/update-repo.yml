@@ -1,0 +1,92 @@
+name: Update APT Repository
+
+on:
+  repository_dispatch:
+    types: [xcsh-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g., 1.3.13-f5xc.1)"
+        required: true
+      tag:
+        description: "Release tag (e.g., v1.3.13-f5xc.1)"
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  update-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Set version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "version=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.vars.outputs.tag }}"
+          mkdir -p assets
+          gh release download "$tag" \
+            --repo f5xc-salesdemos/xcsh \
+            --pattern "xcsh-linux-x64.tar.gz" \
+            --pattern "xcsh-linux-arm64.tar.gz" \
+            --dir ./assets
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev apt-utils
+
+      - name: Build .deb packages
+        run: |
+          version="${{ steps.vars.outputs.version }}"
+          chmod +x scripts/build-deb.sh
+          bash scripts/build-deb.sh "$version" amd64 ./assets/xcsh-linux-x64.tar.gz
+          bash scripts/build-deb.sh "$version" arm64 ./assets/xcsh-linux-arm64.tar.gz
+
+      - name: Import GPG key
+        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Remove old packages
+        run: rm -rf gh-pages/pool/main/x/xcsh/*.deb
+
+      - name: Copy new packages to pool
+        run: |
+          mkdir -p gh-pages/pool/main/x/xcsh/
+          cp output/*.deb gh-pages/pool/main/x/xcsh/
+
+      - name: Generate APT repository metadata
+        run: |
+          chmod +x scripts/update-apt-repo.sh
+          bash scripts/update-apt-repo.sh gh-pages
+
+      - name: Export GPG public key
+        run: gpg --armor --export > gh-pages/gpg.key
+
+      - name: Commit and push to gh-pages
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update xcsh to ${{ steps.vars.outputs.tag }}"
+          git push
