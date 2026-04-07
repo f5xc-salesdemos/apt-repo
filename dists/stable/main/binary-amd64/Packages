@@ -4,10 +4,10 @@ Architecture: amd64
 Maintainer: F5 XC Sales Demos <noreply@github.com>
 Installed-Size: 163020
 Filename: pool/main/x/xcsh/xcsh_1.3.17-f5xc.1_amd64.deb
-Size: 38904002
-MD5sum: e94335f6c89135e97ed38c9196a47c18
-SHA1: 3c634a55eef3685f5f90c345132dac9874e299b3
-SHA256: c6cd81613b7c66dc82f8f63e5b9c34914e92b303af090e33005fa1051df5d808
+Size: 38904236
+MD5sum: ff7ba8e590f7ba1b0904caebd5831fa7
+SHA1: 2b3e5bafab682b922d66187472549d2bc3215b62
+SHA256: 9569dc86a76554f8eb1ef92773795bd4dd4b51f626ef2fed554ab4f66d720dc5
 Section: utils
 Priority: optional
 Homepage: https://github.com/f5xc-salesdemos/xcsh
