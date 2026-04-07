@@ -2,9 +2,16 @@ name: Update APT Repository
 
 on:
   repository_dispatch:
-    types: [xcsh-release]
+    types: [xcsh-release, oh-my-xcsh-release]
   workflow_dispatch:
     inputs:
+      package:
+        description: "Package to update"
+        required: true
+        type: choice
+        options:
+          - xcsh
+          - oh-my-xcsh
       version:
         description: "Version (e.g., 1.3.13-f5xc.1)"
         required: true
@@ -29,49 +36,78 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      - name: Set version
+      - name: Set variables
         id: vars
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             echo "version=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT"
             echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
+            case "${{ github.event.action }}" in
+              xcsh-release) echo "package=xcsh" >> "$GITHUB_OUTPUT" ;;
+              oh-my-xcsh-release) echo "package=oh-my-xcsh" >> "$GITHUB_OUTPUT" ;;
+            esac
           else
             echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "package=${{ inputs.package }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Download release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE: ${{ steps.vars.outputs.package }}
+          TAG: ${{ steps.vars.outputs.tag }}
         run: |
-          tag="${{ steps.vars.outputs.tag }}"
           mkdir -p assets
-          gh release download "$tag" \
-            --repo f5xc-salesdemos/xcsh \
-            --pattern "xcsh-linux-x64.tar.gz" \
-            --pattern "xcsh-linux-arm64.tar.gz" \
-            --dir ./assets
+          repo="f5xc-salesdemos/${PACKAGE}"
+
+          if [ "$PACKAGE" = "xcsh" ]; then
+            gh release download "$TAG" --repo "$repo" \
+              --pattern "xcsh-linux-x64.tar.gz" \
+              --pattern "xcsh-linux-arm64.tar.gz" \
+              --dir ./assets
+          elif [ "$PACKAGE" = "oh-my-xcsh" ]; then
+            gh release download "$TAG" --repo "$repo" \
+              --pattern "oh-my-xcsh-linux-x64.tar.gz" \
+              --pattern "oh-my-xcsh-linux-arm64.tar.gz" \
+              --dir ./assets
+          fi
 
       - name: Install packaging tools
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev apt-utils
 
       - name: Build .deb packages
+        env:
+          PACKAGE: ${{ steps.vars.outputs.package }}
+          VERSION: ${{ steps.vars.outputs.version }}
         run: |
-          version="${{ steps.vars.outputs.version }}"
           chmod +x scripts/build-deb.sh
-          bash scripts/build-deb.sh "$version" amd64 ./assets/xcsh-linux-x64.tar.gz
-          bash scripts/build-deb.sh "$version" arm64 ./assets/xcsh-linux-arm64.tar.gz
+
+          if [ "$PACKAGE" = "xcsh" ]; then
+            bash scripts/build-deb.sh xcsh "$VERSION" amd64 ./assets/xcsh-linux-x64.tar.gz
+            bash scripts/build-deb.sh xcsh "$VERSION" arm64 ./assets/xcsh-linux-arm64.tar.gz
+          elif [ "$PACKAGE" = "oh-my-xcsh" ]; then
+            bash scripts/build-deb.sh oh-my-xcsh "$VERSION" amd64 ./assets/oh-my-xcsh-linux-x64.tar.gz
+            bash scripts/build-deb.sh oh-my-xcsh "$VERSION" arm64 ./assets/oh-my-xcsh-linux-arm64.tar.gz
+          fi
 
       - name: Import GPG key
         run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
 
-      - name: Remove old packages
-        run: rm -rf gh-pages/pool/main/x/xcsh/*.deb
+      - name: Remove old packages for this package only
+        env:
+          PACKAGE: ${{ steps.vars.outputs.package }}
+        run: |
+          letter="${PACKAGE:0:1}"
+          rm -f gh-pages/pool/main/"${letter}"/"${PACKAGE}"/*.deb
 
       - name: Copy new packages to pool
+        env:
+          PACKAGE: ${{ steps.vars.outputs.package }}
         run: |
-          mkdir -p gh-pages/pool/main/x/xcsh/
-          cp output/*.deb gh-pages/pool/main/x/xcsh/
+          letter="${PACKAGE:0:1}"
+          mkdir -p "gh-pages/pool/main/${letter}/${PACKAGE}/"
+          cp output/*.deb "gh-pages/pool/main/${letter}/${PACKAGE}/"
 
       - name: Generate APT repository metadata
         run: |
@@ -83,10 +119,13 @@ jobs:
 
       - name: Commit and push to gh-pages
         working-directory: gh-pages
+        env:
+          PACKAGE: ${{ steps.vars.outputs.package }}
+          TAG: ${{ steps.vars.outputs.tag }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "Update xcsh to ${{ steps.vars.outputs.tag }}"
+          git commit -m "Update ${PACKAGE} to ${TAG}"
           git push

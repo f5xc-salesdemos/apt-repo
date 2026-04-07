@@ -1,6 +1,15 @@
 # xcsh APT Repository
 
-Debian/Ubuntu package repository for [xcsh](https://github.com/f5xc-salesdemos/xcsh), an AI coding agent for the terminal.
+Debian/Ubuntu package repository for [xcsh](https://github.com/f5xc-salesdemos/xcsh) and [oh-my-xcsh](https://github.com/f5xc-salesdemos/oh-my-xcsh).
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| `xcsh` | AI coding agent for the terminal |
+| `oh-my-xcsh` | Batteries-included xcsh plugin with multi-model orchestration |
+
+Installing `xcsh` automatically installs `oh-my-xcsh` as a dependency.
 
 ## Install
 
@@ -28,7 +37,7 @@ sudo apt upgrade xcsh
 ## Uninstall
 
 ```bash
-sudo apt remove xcsh
+sudo apt remove xcsh oh-my-xcsh
 sudo rm /etc/apt/sources.list.d/xcsh.list
 sudo rm /usr/share/keyrings/xcsh-archive-keyring.gpg
 ```
@@ -40,6 +49,4 @@ sudo rm /usr/share/keyrings/xcsh-archive-keyring.gpg
 
 ## How It Works
 
-This repository is hosted on GitHub Pages and updated automatically when a new xcsh release is published. The workflow downloads Linux binaries from the [xcsh releases](https://github.com/f5xc-salesdemos/xcsh/releases), packages them as `.deb` files, and regenerates the APT repository metadata.
-
-Only the latest version is kept in the repository. For older versions, download directly from [GitHub Releases](https://github.com/f5xc-salesdemos/xcsh/releases).
+This repository is hosted on GitHub Pages and updated automatically when new releases are published. Only the latest version of each package is kept. For older versions, download from GitHub Releases directly.
