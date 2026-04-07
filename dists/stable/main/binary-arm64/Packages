@@ -1,0 +1,17 @@
+Package: xcsh
+Version: 1.3.17-f5xc.1
+Architecture: arm64
+Maintainer: F5 XC Sales Demos <noreply@github.com>
+Installed-Size: 163252
+Filename: pool/main/x/xcsh/xcsh_1.3.17-f5xc.1_arm64.deb
+Size: 38478066
+MD5sum: 83f0492bbd58f192a0f274680568c5ef
+SHA1: 5b93cdf55044443151580614ee0767ed5aec4a05
+SHA256: c74eea40a7aa0fda6c9ccdb36413f471b19edaeec57a9ed1842d4c08314cde38
+Section: utils
+Priority: optional
+Homepage: https://github.com/f5xc-salesdemos/xcsh
+Description: AI coding agent for the terminal
+ xcsh is an AI-powered coding agent built for the terminal.
+ Multi-model AI support, TUI, LSP integration, and plugin system.
+
