@@ -29,7 +29,7 @@ permissions:
 jobs:
   update-repo:
     name: Publish APT repository
-    runs-on: [self-hosted, Linux, X64, apt-repo, ubuntu-24.04]
+    runs-on: managed-socketless
     environment: apt-repository-publish
     permissions:
       contents: write # commit the generated package repository to gh-pages
