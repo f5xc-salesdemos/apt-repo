@@ -1,0 +1,56 @@
+---
+title: F5 Sales Demo APT Repository
+description: Official Debian and Ubuntu APT repository hosting binary packages for xcsh and developer tooling.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+The **F5 Sales Demo APT Repository** hosts cryptographically signed Debian (`.deb`) packages for the `xcsh` AI development assistant and supporting utilities across both `amd64` and `arm64` architectures.
+
+## Architecture
+
+```text
++-------------------------------------------------------------------------+
+|                        APT Repository Architecture                      |
+|                                                                         |
+|  +-------------------------------------------------------------------+  |
+|  | Base URI: https://f5-sales-demo.github.io/apt-repo/               |  |
+|  | GPG Key:  /f5xc-archive-keyring.gpg (4096-bit RSA)               |  |
+|  +-------------------------------------------------------------------+  |
+|                                    |                                    |
+|         +--------------------------+--------------------------+         |
+|         |                                                     |         |
+|         v                                                     v         |
+|  +-----------------------------+               +---------------------+  |
+|  | dists/stable/main/          |               | pool/main/x/xcsh/   |  |
+|  |   binary-amd64/Packages.gz  | ------------> |   xcsh_amd64.deb    |  |
+|  |   binary-arm64/Packages.gz  | ------------> |   xcsh_arm64.deb    |  |
+|  |   InRelease / Release.gpg   |               +---------------------+  |
+|  +-----------------------------+                                        |
++-------------------------------------------------------------------------+
+```
+
+## Quick Installation
+
+Add the GPG repository key and software source to your Debian/Ubuntu workstation:
+
+```bash
+# 1. Download and install the GPG signing key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://f5-sales-demo.github.io/apt-repo/f5xc-archive-keyring.gpg | sudo tee /etc/apt/keyrings/f5xc-archive-keyring.gpg > /dev/null
+
+# 2. Add the repository source configuration
+echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/f5xc-archive-keyring.gpg] https://f5-sales-demo.github.io/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/f5xc.list
+
+# 3. Update repository index and install xcsh
+sudo apt-get update
+sudo apt-get install -y xcsh
+```
+
+## Supported Distributions
+
+| Distribution | Architecture | Support Status |
+| :--- | :--- | :--- |
+| **Ubuntu 24.04 LTS (Noble Numbat)** | `amd64`, `arm64` | Supported |
+| **Ubuntu 22.04 LTS (Jammy Jellyfish)** | `amd64`, `arm64` | Supported |
+| **Debian 12 (Bookworm)** | `amd64`, `arm64` | Supported |
